@@ -64,7 +64,7 @@ Siga os passos abaixo para rodar o projeto diretamente em sua máquina.
 1.  **Clone o Repositório e Navegue até a Pasta:**
 
     ```bash
-    git clone <url-do-seu-repositorio>
+    git clone https://github.com/macheuz/sistema_airbnb_laboratorio/tree/master
     cd planejador_airbnb
     ```
 

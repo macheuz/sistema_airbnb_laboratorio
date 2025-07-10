@@ -82,12 +82,12 @@ Siga os passos abaixo para rodar o projeto diretamente em sua máquina.
     ```
 
 4.  **Configure a Conexão com o Banco de Dados:**
-    As configurações de desenvolvimento (`settings_dev.py`) leem as credenciais de um arquivo `.env`. Crie um arquivo chamado `.env` na raiz do projeto (`planejador_airbnb/.env`) e preencha-o com os dados do contêiner do banco de dados que você iniciou na Etapa 0.
+    As configurações (`settings.py`) leem as credenciais de um arquivo `.env`. Crie um arquivo chamado `.env` na raiz do projeto (`planejador_airbnb/.env`) e preencha-o com os dados do contêiner do banco de dados que você iniciou na Etapa 0.
 
     **Arquivo: `.env` (crie este arquivo)**
 
     ```ini
-    DJANGO_ENV=prod # -> ele define se o ambiente é producao ou desenvolvimento
+    DJANGO_ENV=prod  # -> define o ambiente como producao
     ```
 
 5.  **Aplique as Migrações e Inicie o Servidor:**
@@ -205,6 +205,6 @@ Para uma execução de produção isolada e portável.
     ./init-letsencrypt.sh
     ```
 
-Sua aplicação estará disponível em `https://seu-dominio.com`. Lembre-se de configurar o domínio para apontar para seu servidor.
-Você pode carregar os dados de teste da aplicação usando o arquivo csv no link: https://drive.google.com/drive/folders/1YouDAfScLdwcSYEVfMnUN2gXEM362bFd?usp=sharing
-e rodar o notebook [3 - tratamento_e_insercao_dos_dados.ipynb](../scrappling/notebook/3%20-%20tratamento_e_insercao_dos_dados.ipynb)
+Sua aplicação estará disponível em `https://seu-dominio.com`.
+Lembre-se de apontar seu domínio para seu servidor.
+Você pode carregar os dados para o banco de dados seguindo o passo a passo de scrappling, no script 3 (leia o readme.md do scrappling)

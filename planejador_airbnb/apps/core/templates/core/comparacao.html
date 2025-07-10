@@ -1,0 +1,1803 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Comparação de Localidades - PlanB{% endblock %}
+
+{% block content %}
+<style>
+
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f8fafc;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --card-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    --gradient-warning: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+}
+
+
+.comparison-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 3rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.comparison-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.comparison-header > * {
+    position: relative;
+    z-index: 2;
+}
+
+.comparison-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.comparison-subtitle {
+    font-size: 1.2rem;
+    color: white;
+    opacity: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+
+.selection-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--card-shadow-lg);
+    border: 1px solid var(--border-color);
+    margin-top: -2rem;
+    position: relative;
+    z-index: 10;
+}
+
+.selection-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.location-selector {
+    background: var(--secondary-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.location-selector.active {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.location-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+    height: 3.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.form-floating > .form-control:focus,
+.form-floating > .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-floating > label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.search-params-section {
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    margin-top: 1.5rem;
+}
+
+.search-params-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.compare-btn {
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    width: 100%;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.compare-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+}
+
+.compare-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+.comparison-results {
+    display: none;
+    margin-top: 3rem;
+}
+
+.comparison-results.show {
+    display: block;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+.result-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    height: 100%;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.result-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.result-badge {
+    background: var(--gradient-success);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--secondary-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+
+.chart-container {
+    position: relative;
+    height: 350px;
+    margin: 1.5rem 0;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.chart-toggle {
+    display: flex;
+    background: var(--secondary-color);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+.toggle-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.toggle-btn:hover:not(.active) {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+}
+
+
+.accommodation-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.accommodation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.accommodation-item:hover {
+    background: var(--secondary-color);
+}
+
+.accommodation-item:last-child {
+    border-bottom: none;
+}
+
+.accommodation-info {
+    flex: 1;
+}
+
+.accommodation-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.accommodation-details {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.accommodation-price-section {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.accommodation-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--success-color);
+}
+.view-accommodation-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.view-accommodation-btn:hover {
+    background: var(--primary-hover);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.comparison-insights {
+    background: var(--gradient-warning);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.insights-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.insight-item {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.insight-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.insight-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+
+@media (max-width: 768px) {
+    .comparison-title {
+        font-size: 2rem;
+    }
+
+    .selection-card {
+        padding: 1.5rem;
+        margin-top: -1rem;
+    }
+
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+
+    .accommodation-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .accommodation-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    .accommodation-price-section {
+        align-items: flex-start;
+        text-align: left;
+        width: 100%;
+    }
+}
+
+
+.error-state,
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+.error-state i,
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error-state h3,
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.alert-validation {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--error-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+</style>
+
+<div class="comparison-header">
+    <div class="container">
+        <h1 class="comparison-title">Compare Localidades</h1>
+        <p class="comparison-subtitle">
+            Compare preços entre diferentes cidades e bairros em datas específicas.
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="selection-card">
+        <h2 class="selection-title">
+            <i class="bi bi-arrow-left-right"></i>
+            Configure sua comparação
+        </h2>
+
+        <form id="comparison-form">
+            <div class="row g-4">
+                <!-- Localização 1 -->
+                <div class="col-lg-6">
+                    <div class="location-selector" id="location-1">
+                        <div class="location-header">
+                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                            Primeira Localização
+                        </div>
+
+                        <div class="form-floating">
+                            <select id="cidade-1" name="cidade_1" class="form-select" required>
+                                <option value="" disabled selected></option>
+                                {% for cidade in cidades %}
+                                    <option value="{{ cidade.id }}">{{ cidade.nome }}, {{ cidade.estado }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="cidade-1">Cidade *</label>
+                        </div>
+
+                        <div class="form-floating">
+                            <select id="bairro-1" name="bairro_1" class="form-select" disabled>
+                                <option value="" disabled selected></option>
+                            </select>
+                            <label for="bairro-1">Bairro (opcional)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Localização 2 -->
+                <div class="col-lg-6">
+                    <div class="location-selector" id="location-2">
+                        <div class="location-header">
+                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                            Segunda Localização
+                        </div>
+
+                        <div class="form-floating">
+                            <select id="cidade-2" name="cidade_2" class="form-select" required>
+                                <option value="" disabled selected></option>
+                                {% for cidade in cidades %}
+                                    <option value="{{ cidade.id }}">{{ cidade.nome }}, {{ cidade.estado }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="cidade-2">Cidade *</label>
+                        </div>
+
+                        <div class="form-floating">
+                            <select id="bairro-2" name="bairro_2" class="form-select" disabled>
+                                <option value="" disabled selected></option>
+                            </select>
+                            <label for="bairro-2">Bairro (opcional)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parâmetros de Busca -->
+            <div class="search-params-section">
+                <div class="search-params-title">
+                    <i class="bi bi-calendar-check"></i>
+                    Parâmetros da Viagem
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="date" id="data-checkin" name="data_checkin" class="form-control" required>
+                            <label for="data-checkin">Data de Check-in *</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select id="hospedes" name="hospedes" class="form-select" required>
+                                <option value="" disabled selected></option>
+                                {% for i in "12345678910"|make_list %}
+                                    <option value="{{ forloop.counter }}">{{ forloop.counter }} hóspede{% if forloop.counter > 1 %}s{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="hospedes">Número de Hóspedes *</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select id="quantidade-noites" name="quantidade_noites" class="form-select" required>
+                                <option value="" disabled selected></option>
+                                {% for i in "123456789101112131415"|make_list %}
+                                    <option value="{{ forloop.counter }}">{{ forloop.counter }} noite{% if forloop.counter > 1 %}s{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="quantidade-noites">Quantidade de Noites *</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerta de Validação -->
+            <div id="validation-alert" class="alert-validation d-none">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span id="validation-text"></span>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" id="compare-btn" class="compare-btn" disabled>
+                    <i class="bi bi-bar-chart-line me-2"></i>
+                    Comparar Localidades
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resultados da Comparação -->
+    <div id="comparison-results" class="comparison-results">
+        <!-- Insights Gerais -->
+        <div id="comparison-insights" class="comparison-insights">
+            <h3 class="insights-title">Resultado da Comparação</h3>
+            <p id="insights-description"></p>
+            <div class="insights-grid">
+                <div class="insight-item">
+                    <div id="economia-potencial" class="insight-value">-</div>
+                    <div class="insight-label">Economia por Dia</div>
+                </div>
+                <div class="insight-item">
+                    <div id="local-mais-barato" class="insight-value">-</div>
+                    <div class="insight-label">Local Mais Barato</div>
+                </div>
+                <div class="insight-item">
+                    <div id="diferenca-percentual" class="insight-value">-</div>
+                    <div class="insight-label">Diferença %</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Comparação de Preços na Data -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="result-card">
+                    <h4 class="chart-title">Comparação de Preços na Data Selecionada</h4>
+                    <div class="chart-toggle">
+                        <button type="button" class="toggle-btn active" id="btn-comparacao-quartos" onclick="toggleComparisonChart('quartos')">
+                            <i class="bi bi-door-open-fill"></i>
+                            Por Quartos
+                        </button>
+                        <button type="button" class="toggle-btn" id="btn-comparacao-camas" onclick="toggleComparisonChart('camas')">
+                            <i class="bi bi-bed-fill"></i>
+                            Por Camas
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-comparacao-data"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Tendência Anual -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="result-card">
+                    <h4 class="chart-title">Tendência de Preços ao Longo do Ano</h4>
+                    <div class="chart-toggle">
+                        <button type="button" class="toggle-btn active" id="btn-tendencia-quartos" onclick="toggleTrendChart('quartos')">
+                            <i class="bi bi-door-open-fill"></i>
+                            Por Quartos
+                        </button>
+                        <button type="button" class="toggle-btn" id="btn-tendencia-camas" onclick="toggleTrendChart('camas')">
+                            <i class="bi bi-bed-fill"></i>
+                            Por Camas
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-tendencia-ano"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Detalhadas -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3 id="location-1-name" class="result-title">Localização 1</h3>
+                        <span class="result-badge">Local 1</span>
+                    </div>
+
+                    <div class="stat-grid" id="stats-location-1">
+                        <!-- Stats preenchidas dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3 id="location-2-name" class="result-title">Localização 2</h3>
+                        <span class="result-badge">Local 2</span>
+                    </div>
+
+                    <div class="stat-grid" id="stats-location-2">
+                        <!-- Stats preenchidas dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Acomodações Mais Baratas -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="result-card">
+                    <h4 class="chart-title">Top Acomodações Mais Baratas - <span id="location-1-title">Local 1</span></h4>
+                    <div class="accommodation-list" id="accommodations-1">
+                        <!-- Lista preenchida dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="result-card">
+                    <h4 class="chart-title">Top Acomodações Mais Baratas - <span id="location-2-title">Local 2</span></h4>
+                    <div class="accommodation-list" id="accommodations-2">
+                        <!-- Lista preenchida dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado de Erro -->
+    <div id="error-state" class="error-state" style="display: none;">
+        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+        <h3>Erro ao carregar dados</h3>
+        <p>Não foi possível carregar os dados de comparação. Tente novamente.</p>
+    </div>
+
+    <!-- Estado Vazio -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <i class="bi bi-search text-secondary"></i>
+        <h3>Nenhum dado encontrado</h3>
+        <p>Não foram encontrados dados para as condições especificadas.</p>
+    </div>
+</div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const bairrosApiUrl = "{% url 'core:api_bairros_comparacao' %}";
+    const datasApiUrl = "{% url 'core:api_datas_disponiveis_comparacao' %}";
+    const hospedesApiUrl = "{% url 'core:api_hospedes_disponiveis_comparacao' %}";
+    const noitesApiUrl = "{% url 'core:api_noites_disponiveis_comparacao' %}";
+    const comparacaoApiUrl = "{% url 'core:api_comparacao_data' %}";
+
+
+    const form = document.getElementById('comparison-form');
+    const compareBtn = document.getElementById('compare-btn');
+    const comparisonResults = document.getElementById('comparison-results');
+    const errorState = document.getElementById('error-state');
+    const emptyState = document.getElementById('empty-state');
+    const validationAlert = document.getElementById('validation-alert');
+    const validationText = document.getElementById('validation-text');
+
+
+    const cidade1 = document.getElementById('cidade-1');
+    const bairro1 = document.getElementById('bairro-1');
+    const cidade2 = document.getElementById('cidade-2');
+    const bairro2 = document.getElementById('bairro-2');
+    const dataCheckin = document.getElementById('data-checkin');
+    const hospedes = document.getElementById('hospedes');
+    const quantidadeNoites = document.getElementById('quantidade-noites');
+
+
+    let chartComparacao = null;
+    let chartTendencia = null;
+
+
+    const colors = {
+        location1: {
+            primary: '#6366f1',
+            secondary: 'rgba(99, 102, 241, 0.1)'
+        },
+        location2: {
+            primary: '#10b981',
+            secondary: 'rgba(16, 185, 129, 0.1)'
+        }
+    };
+
+
+    const trendColors = [
+        { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
+        { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' },
+        { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+        { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+        { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+        { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+        { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' },
+        { border: '#84cc16', bg: 'rgba(132, 204, 22, 0.1)' },
+        { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)' },
+        { border: '#14b8a6', bg: 'rgba(20, 184, 166, 0.1)' }
+    ];
+
+
+    const today = new Date().toISOString().split('T')[0];
+    dataCheckin.setAttribute('min', today);
+
+
+    cidade1.addEventListener('change', function() {
+        loadBairros(this.value, bairro1);
+        document.getElementById('location-1').classList.add('active');
+
+
+        if (cidade2.value) {
+            loadDatasDisponiveis();
+        }
+
+        validateForm();
+    });
+
+    cidade2.addEventListener('change', function() {
+        loadBairros(this.value, bairro2);
+        document.getElementById('location-2').classList.add('active');
+
+
+        if (cidade1.value) {
+            loadDatasDisponiveis();
+        }
+
+        validateForm();
+    });
+
+
+    bairro1.addEventListener('change', function() {
+        if (cidade1.value && cidade2.value) {
+            loadDatasDisponiveis();
+        }
+        validateForm();
+    });
+
+    bairro2.addEventListener('change', function() {
+        if (cidade1.value && cidade2.value) {
+            loadDatasDisponiveis();
+        }
+        validateForm();
+    });
+
+
+    dataCheckin.addEventListener('change', function() {
+        if (this.value && cidade1.value && cidade2.value) {
+            loadHospedesDisponiveis();
+        }
+        validateForm();
+    });
+
+
+    hospedes.addEventListener('change', function() {
+        if (this.value && dataCheckin.value && cidade1.value && cidade2.value) {
+            loadNoitesDisponiveis();
+        }
+        validateForm();
+    });
+
+
+    quantidadeNoites.addEventListener('change', validateForm);
+
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (validateForm()) {
+            performComparison();
+        }
+    });
+
+
+    function loadBairros(cidadeId, bairroSelect) {
+        if (!cidadeId) return;
+
+        bairroSelect.disabled = true;
+        bairroSelect.innerHTML = '<option value="" disabled selected>Carregando...</option>';
+
+        fetch(`${bairrosApiUrl}?cidade_id=${cidadeId}`)
+            .then(response => response.json())
+            .then(data => {
+                bairroSelect.innerHTML = '<option value="">Toda a cidade</option>';
+                data.forEach(bairro => {
+                    const option = document.createElement('option');
+                    option.value = bairro.id;
+                    option.textContent = bairro.nome;
+                    bairroSelect.appendChild(option);
+                });
+                bairroSelect.disabled = false;
+                validateForm();
+            })
+            .catch(error => {
+                console.error('Erro ao carregar bairros:', error);
+                bairroSelect.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
+                showToast('Erro ao carregar bairros. Tente novamente.', 'danger');
+            });
+    }
+
+
+    function loadDatasDisponiveis() {
+        if (!cidade1.value || !cidade2.value) return;
+
+        dataCheckin.disabled = true;
+        dataCheckin.value = '';
+        resetSelect(hospedes, 'Selecione uma data primeiro');
+        resetSelect(quantidadeNoites, 'Selecione o número de hóspedes primeiro');
+
+        const params = new URLSearchParams({
+            cidade_1: cidade1.value,
+            cidade_2: cidade2.value
+        });
+
+        if (bairro1.value) params.append('bairro_1', bairro1.value);
+        if (bairro2.value) params.append('bairro_2', bairro2.value);
+
+        fetch(`${datasApiUrl}?${params.toString()}`)
+            .then(response => response.json())
+            .then(datas => {
+                dataCheckin.disabled = false;
+
+
+                if (window.flatpickrInstance) {
+                    window.flatpickrInstance.destroy();
+                }
+
+                window.flatpickrInstance = flatpickr(dataCheckin, {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d/m/Y",
+                    locale: "pt",
+                    minDate: "today",
+                    enable: datas,
+                    animate: true,
+                    disableMobile: false,
+                    onChange: function(selectedDates, dateStr) {
+                        if (dateStr) {
+                            loadHospedesDisponiveis();
+                        }
+                        validateForm();
+                    }
+                });
+
+                if (datas.length === 0) {
+                    showToast('Nenhuma data comum encontrada para comparação entre essas localizações.', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar datas:', error);
+                showToast('Erro ao carregar datas disponíveis.', 'danger');
+            });
+    }
+
+
+    function loadHospedesDisponiveis() {
+        if (!dataCheckin.value || !cidade1.value || !cidade2.value) return;
+
+        resetSelect(hospedes, 'Carregando...');
+        resetSelect(quantidadeNoites, 'Selecione o número de hóspedes primeiro');
+
+        const params = new URLSearchParams({
+            cidade_1: cidade1.value,
+            cidade_2: cidade2.value,
+            data_checkin: dataCheckin.value
+        });
+
+        if (bairro1.value) params.append('bairro_1', bairro1.value);
+        if (bairro2.value) params.append('bairro_2', bairro2.value);
+
+        fetch(`${hospedesApiUrl}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                resetSelect(hospedes, 'Número de hóspedes', false);
+                data.forEach(hospedeCount => {
+                    const text = hospedeCount === 1 ? '1 hóspede' : `${hospedeCount} hóspedes`;
+                    hospedes.add(new Option(text, hospedeCount));
+                });
+
+                if (data.length === 0) {
+                    showToast('Nenhuma opção de hóspedes comum encontrada.', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar hóspedes:', error);
+                showToast('Erro ao carregar opções de hóspedes.', 'danger');
+            });
+    }
+
+
+    function loadNoitesDisponiveis() {
+        if (!hospedes.value || !dataCheckin.value || !cidade1.value || !cidade2.value) return;
+
+        resetSelect(quantidadeNoites, 'Carregando...');
+
+        const params = new URLSearchParams({
+            cidade_1: cidade1.value,
+            cidade_2: cidade2.value,
+            data_checkin: dataCheckin.value,
+            hospedes: hospedes.value
+        });
+
+        if (bairro1.value) params.append('bairro_1', bairro1.value);
+        if (bairro2.value) params.append('bairro_2', bairro2.value);
+
+        fetch(`${noitesApiUrl}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                resetSelect(quantidadeNoites, 'Quantidade de noites', false);
+                data.forEach(noite => {
+                    const text = noite === 1 ? '1 noite' : `${noite} noites`;
+                    quantidadeNoites.add(new Option(text, noite));
+                });
+
+                if (data.length === 0) {
+                    showToast('Nenhuma duração comum disponível encontrada.', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar noites:', error);
+                showToast('Erro ao carregar durações disponíveis.', 'danger');
+            });
+    }
+
+
+    function resetSelect(selectElement, message, disabled = true) {
+        selectElement.disabled = disabled;
+        selectElement.innerHTML = `<option value="" disabled selected>${message}</option>`;
+    }
+
+
+    function validateForm() {
+        validationAlert.classList.add('d-none');
+
+        const cidade1Val = cidade1.value;
+        const bairro1Val = bairro1.value;
+        const cidade2Val = cidade2.value;
+        const bairro2Val = bairro2.value;
+        const dataVal = dataCheckin.value;
+        const hospedesVal = hospedes.value;
+        const noitesVal = quantidadeNoites.value;
+
+
+        if (!cidade1Val || !cidade2Val || !dataVal || !hospedesVal || !noitesVal) {
+            compareBtn.disabled = true;
+            return false;
+        }
+
+
+        if (cidade1Val === cidade2Val) {
+            if (!bairro1Val && !bairro2Val) {
+                showValidationError('Para comparar a mesma cidade, você deve especificar pelo menos um bairro.');
+                compareBtn.disabled = true;
+                return false;
+            }
+            if (bairro1Val && bairro2Val && bairro1Val === bairro2Val) {
+                showValidationError('Por favor, selecione bairros diferentes para comparar.');
+                compareBtn.disabled = true;
+                return false;
+            }
+        }
+
+
+        if (new Date(dataVal) < new Date()) {
+            showValidationError('A data deve ser futura.');
+            compareBtn.disabled = true;
+            return false;
+        }
+
+        compareBtn.disabled = false;
+        return true;
+    }
+
+
+    function showValidationError(message) {
+        validationText.textContent = message;
+        validationAlert.classList.remove('d-none');
+    }
+
+
+    function performComparison() {
+
+
+
+        compareBtn.classList.add('loading');
+        compareBtn.disabled = true;
+        compareBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Comparando...';
+
+
+        comparisonResults.classList.remove('show');
+        errorState.style.display = 'none';
+        emptyState.style.display = 'none';
+
+
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+
+
+
+        fetch(`${comparacaoApiUrl}?${params.toString()}`)
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                displayComparisonResults(data);
+            })
+            .catch(error => {
+                console.error('Erro na comparação:', error);
+                showError();
+            })
+            .finally(() => {
+
+                compareBtn.classList.remove('loading');
+                compareBtn.disabled = false;
+                compareBtn.innerHTML = '<i class="bi bi-bar-chart-line me-2"></i>Comparar Localidades';
+            });
+    }
+
+
+    function displayComparisonResults(data) {
+
+
+
+        if (!data.local_1 || !data.local_2) {
+            showEmpty();
+            return;
+        }
+
+
+        updateGeneralInsights(data.comparacao_geral);
+
+        document.getElementById('location-1-name').textContent = data.local_1.nome;
+        document.getElementById('location-2-name').textContent = data.local_2.nome;
+        document.getElementById('location-1-title').textContent = data.local_1.nome;
+        document.getElementById('location-2-title').textContent = data.local_2.nome;
+
+        updateLocationStats('stats-location-1', data.local_1.estatisticas);
+        updateLocationStats('stats-location-2', data.local_2.estatisticas);
+
+        updateComparisonChart(data);
+        updateTrendChart(data);
+
+        updateAccommodationsList('accommodations-1', data.local_1.acomodacoes_baratas);
+        updateAccommodationsList('accommodations-2', data.local_2.acomodacoes_baratas);
+
+        comparisonResults.classList.add('show');
+
+        window.currentComparisonData = data;
+    }
+
+    function updateGeneralInsights(comparacao) {
+
+        if (comparacao.erro) {
+            document.getElementById('insights-description').textContent = comparacao.recomendacao;
+            document.getElementById('economia-potencial').textContent = 'N/A';
+            document.getElementById('local-mais-barato').textContent = 'N/A';
+            document.getElementById('diferenca-percentual').textContent = 'N/A';
+        } else {
+            document.getElementById('insights-description').textContent = comparacao.recomendacao;
+            document.getElementById('economia-potencial').textContent = `R$ ${comparacao.economia_potencial.toFixed(2)}`;
+            document.getElementById('local-mais-barato').textContent = comparacao.local_mais_barato;
+            document.getElementById('diferenca-percentual').textContent = `${comparacao.diferenca_preco_percentual}%`;
+        }
+    }
+
+    function updateLocationStats(containerId, stats) {
+
+
+        const container = document.getElementById(containerId);
+
+        const formatMoney = (value) => {
+            const num = parseFloat(value) || 0;
+            return num.toFixed(2);
+        };
+
+        container.innerHTML = `
+            <div class="stat-item">
+                <span class="stat-value">R$ ${formatMoney(stats.preco_medio_geral)}</span>
+                <span class="stat-label">Preço Médio</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${stats.total_propriedades || 0}</span>
+                <span class="stat-label">Propriedades</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">R$ ${formatMoney(stats.preco_minimo)}</span>
+                <span class="stat-label">Menor Preço</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">R$ ${formatMoney(stats.preco_maximo)}</span>
+                <span class="stat-label">Maior Preço</span>
+            </div>
+        `;
+    }
+
+
+    function updateComparisonChart(data) {
+        if (chartComparacao) chartComparacao.destroy();
+
+        const ctx = document.getElementById('chart-comparacao-data');
+        if (!ctx) return;
+
+        const graficoData = data.grafico_comparacao_data;
+
+        const datasets = createComparisonDatasets(
+            graficoData.local_1_quartos,
+            graficoData.local_2_quartos,
+            data.local_1.nome,
+            data.local_2.nome,
+            'quartos'
+        );
+
+        chartComparacao = new Chart(ctx, {
+            type: 'bar',
+            data: datasets,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        borderColor: colors.location1.primary,
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateTrendChart(data) {
+        if (chartTendencia) chartTendencia.destroy();
+
+        const ctx = document.getElementById('chart-tendencia-ano');
+        if (!ctx) return;
+
+        const datasets = createTrendDatasets(
+            data.local_1.precos_quartos_ano,
+            data.local_2.precos_quartos_ano,
+            data.local_1.nome,
+            data.local_2.nome,
+            'quartos'
+        );
+
+        chartTendencia = new Chart(ctx, {
+            type: 'line',
+            data: datasets,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        borderColor: colors.location1.primary,
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(0);
+                            }
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        borderWidth: 3,
+                        tension: 0.4
+                    },
+                    point: {
+                        radius: 5,
+                        hoverRadius: 8,
+                        borderWidth: 2
+                    }
+                }
+            }
+        });
+    }
+
+
+    function createComparisonDatasets(data1, data2, label1, label2, type) {
+        const field = type === 'quartos' ? 'quartos_agrupados' : 'camas_agrupadas';
+        const unit = type === 'quartos' ? 'Quarto(s)' : 'Cama(s)';
+
+
+        const categories = new Set();
+        [...data1, ...data2].forEach(item => {
+            if (item[field] !== null && item[field] !== undefined) {
+                categories.add(item[field]);
+            }
+        });
+
+        const sortedCategories = Array.from(categories).sort((a, b) => a - b);
+        const labels = sortedCategories.map(cat => `${cat === 4 ? '4+' : cat} ${unit}`);
+
+
+        const map1 = {};
+        const map2 = {};
+
+        data1.forEach(item => {
+            if (item[field] !== null && item[field] !== undefined) {
+                map1[item[field]] = item.preco_medio || 0;
+            }
+        });
+
+        data2.forEach(item => {
+            if (item[field] !== null && item[field] !== undefined) {
+                map2[item[field]] = item.preco_medio || 0;
+            }
+        });
+
+        const values1 = sortedCategories.map(cat => map1[cat] || 0);
+        const values2 = sortedCategories.map(cat => map2[cat] || 0);
+
+        return {
+            labels: labels,
+            datasets: [
+                {
+                    label: label1,
+                    data: values1,
+                    backgroundColor: colors.location1.primary,
+                    borderColor: colors.location1.primary,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false
+                },
+                {
+                    label: label2,
+                    data: values2,
+                    backgroundColor: colors.location2.primary,
+                    borderColor: colors.location2.primary,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }
+            ]
+        };
+    }
+
+    function createTrendDatasets(data1, data2, label1, label2, type) {
+        const field = type === 'quartos' ? 'categoria_agrupada' : 'categoria_agrupada';
+
+        const processedData = processTrendData(data1, data2, field);
+
+        if (processedData.months.length === 0) {
+            return {
+                labels: [],
+                datasets: []
+            };
+        }
+
+        const datasets = [];
+        let colorIndex = 0;
+
+        processedData.quantities.forEach((quantity) => {
+            // Obter cores da paleta
+            const color1 = trendColors[colorIndex % trendColors.length];
+            const color2 = trendColors[(colorIndex + 1) % trendColors.length];
+
+            datasets.push({
+                label: `${label1} - ${quantity === 4 ? '4+' : quantity} ${type === 'quartos' ? 'Quarto(s)' : 'Cama(s)'}`,
+                data: processedData.months.map(month => processedData.data1[quantity] && processedData.data1[quantity][month] || null),
+                borderColor: color1.border,
+                backgroundColor: color1.bg,
+                borderWidth: 3,
+                fill: false,
+                spanGaps: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: color1.border,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                borderDash: []
+            });
+
+            datasets.push({
+                label: `${label2} - ${quantity === 4 ? '4+' : quantity} ${type === 'quartos' ? 'Quarto(s)' : 'Cama(s)'}`,
+                data: processedData.months.map(month => processedData.data2[quantity] && processedData.data2[quantity][month] || null),
+                borderColor: color2.border,
+                backgroundColor: color2.bg,
+                borderWidth: 3,
+                fill: false,
+                spanGaps: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: color2.border,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                borderDash: [8, 4]
+            });
+
+            colorIndex += 2;
+        });
+
+        return {
+            labels: processedData.months.map(month => `Mês ${month}`),
+            datasets: datasets
+        };
+    }
+
+    function processTrendData(data1, data2, field) {
+        const months = new Set();
+        const quantities = new Set();
+        const data1Map = {};
+        const data2Map = {};
+
+        data1.forEach(item => {
+            if (item.mes && item[field] !== null && item[field] !== undefined) {
+                months.add(item.mes);
+                quantities.add(item[field]);
+
+                if (!data1Map[item[field]]) data1Map[item[field]] = {};
+                data1Map[item[field]][item.mes] = item.preco_medio;
+            }
+        });
+
+        data2.forEach(item => {
+            if (item.mes && item[field] !== null && item[field] !== undefined) {
+                months.add(item.mes);
+                quantities.add(item[field]);
+
+                if (!data2Map[item[field]]) data2Map[item[field]] = {};
+                data2Map[item[field]][item.mes] = item.preco_medio;
+            }
+        });
+
+        return {
+            months: Array.from(months).sort((a, b) => a - b),
+            quantities: Array.from(quantities).sort((a, b) => a - b),
+            data1: data1Map,
+            data2: data2Map
+        };
+    }
+
+    function updateAccommodationsList(containerId, accommodations) {
+    const container = document.getElementById(containerId);
+
+    if (!accommodations || accommodations.length === 0) {
+        container.innerHTML = '<div class="text-center p-3 text-muted">Nenhuma acomodação encontrada</div>';
+        return;
+    }
+
+    const formatPrice = (value) => {
+        const num = parseFloat(value) || 0;
+        return num.toFixed(2);
+    };
+
+    const formatRating = (value) => {
+        const num = parseFloat(value) || 0;
+        return num > 0 ? num.toFixed(1) : null;
+    };
+
+    const quantidadeNoites = parseInt(document.getElementById('quantidade-noites').value) || 1;
+
+    container.innerHTML = accommodations.map(acc => {
+        const precoPorNoite = parseFloat(acc.preco_medio) || 0;
+        const precoTotal = precoPorNoite * quantidadeNoites;
+
+        return `
+            <div class="accommodation-item">
+                <div class="accommodation-info">
+                    <div class="accommodation-title">
+                        ${acc.anuncios__titulo || acc.imovel__tipo_acomodacao || 'Acomodação'}
+                    </div>
+                    <div class="accommodation-details">
+                        <span><i class="bi bi-door-open"></i> ${acc.imovel__quartos || 0} quartos</span>
+                        <span><i class="bi bi-bed"></i> ${acc.imovel__camas || 0} camas</span>
+                        <span><i class="bi bi-droplet"></i> ${acc.imovel__banheiros || 0} banheiros</span>
+                        ${formatRating(acc.avaliacao_media) ? `<span><i class="bi bi-star-fill"></i> ${formatRating(acc.avaliacao_media)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="accommodation-price-section">
+                    <div class="accommodation-price">
+                        R$ ${formatPrice(precoTotal)}
+                    </div>
+                    <div class="price-per-night" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        R$ ${formatPrice(precoPorNoite)} / noite
+                    </div>
+                    ${acc.anuncios__link ? `
+                        <a href="${acc.anuncios__link}" target="_blank" class="view-accommodation-btn" style="margin-top: 0.5rem;">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>
+                            Ver Oferta
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+    window.toggleComparisonChart = function(type) {
+        const btnQuartos = document.getElementById('btn-comparacao-quartos');
+        const btnCamas = document.getElementById('btn-comparacao-camas');
+
+        btnQuartos.classList.toggle('active', type === 'quartos');
+        btnCamas.classList.toggle('active', type === 'camas');
+
+        if (chartComparacao && window.currentComparisonData) {
+            chartComparacao.destroy();
+
+            const graficoData = window.currentComparisonData.grafico_comparacao_data;
+            const data1 = type === 'quartos' ? graficoData.local_1_quartos : graficoData.local_1_camas;
+            const data2 = type === 'quartos' ? graficoData.local_2_quartos : graficoData.local_2_camas;
+
+            const newDatasets = createComparisonDatasets(
+                data1, data2,
+                window.currentComparisonData.local_1.nome,
+                window.currentComparisonData.local_2.nome,
+                type
+            );
+
+            const ctx = document.getElementById('chart-comparacao-data');
+            chartComparacao = new Chart(ctx, {
+                type: 'bar',
+                data: newDatasets,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: colors.location1.primary,
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    window.toggleTrendChart = function(type) {
+        const btnQuartos = document.getElementById('btn-tendencia-quartos');
+        const btnCamas = document.getElementById('btn-tendencia-camas');
+
+        btnQuartos.classList.toggle('active', type === 'quartos');
+        btnCamas.classList.toggle('active', type === 'camas');
+
+        if (chartTendencia && window.currentComparisonData) {
+            chartTendencia.destroy();
+
+            const data1 = type === 'quartos' ?
+                window.currentComparisonData.local_1.precos_quartos_ano :
+                window.currentComparisonData.local_1.precos_camas_ano;
+            const data2 = type === 'quartos' ?
+                window.currentComparisonData.local_2.precos_quartos_ano :
+                window.currentComparisonData.local_2.precos_camas_ano;
+
+            const newDatasets = createTrendDatasets(
+                data1, data2,
+                window.currentComparisonData.local_1.nome,
+                window.currentComparisonData.local_2.nome,
+                type
+            );
+
+            const ctx = document.getElementById('chart-tendencia-ano');
+            chartTendencia = new Chart(ctx, {
+                type: 'line',
+                data: newDatasets,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: { size: 11 },
+                                padding: 15,
+                                generateLabels: function(chart) {
+                                    const original = Chart.defaults.plugins.legend.labels.generateLabels;
+                                    const labels = original.call(this, chart);
+
+                                    labels.forEach((label, index) => {
+                                        const dataset = chart.data.datasets[index];
+                                        if (dataset && dataset.borderDash && dataset.borderDash.length > 0) {
+                                            label.text += ' (tracejado)';
+                                        }
+                                    });
+
+                                    return labels;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: colors.location1.primary,
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            borderWidth: 3,
+                            tension: 0.4
+                        },
+                        point: {
+                            radius: 5,
+                            hoverRadius: 8,
+                            borderWidth: 2
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    function showError() {
+        comparisonResults.classList.remove('show');
+        errorState.style.display = 'block';
+        emptyState.style.display = 'none';
+    }
+
+    function showEmpty() {
+        comparisonResults.classList.remove('show');
+        errorState.style.display = 'none';
+        emptyState.style.display = 'block';
+    }
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+
+});
+</script>
+{% endblock %}

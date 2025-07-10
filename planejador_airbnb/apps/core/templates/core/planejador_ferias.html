@@ -1,0 +1,1126 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Planejador de Férias - PlanB{% endblock %}
+
+{% block content %}
+<style>
+/*planejador de férias*/
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f8fafc;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --card-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --gradient-vacation: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    --gradient-warning: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+}
+
+/* Header da página */
+.vacation-header {
+    background: var(--gradient-vacation);
+    color: white;
+    padding: 3rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.vacation-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="vacationPattern" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23vacationPattern)"/></svg>');
+    opacity: 0.3;
+}
+
+.vacation-header > * {
+    position: relative;
+    z-index: 2;
+}
+
+.vacation-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.vacation-subtitle {
+    font-size: 1.2rem;
+    color: white;
+    opacity: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/*formulário */
+.vacation-form-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--card-shadow-lg);
+    border: 1px solid var(--border-color);
+    margin-top: -2rem;
+    position: relative;
+    z-index: 10;
+}
+
+.form-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/*Estatísticas rápidas */
+.quick-stats {
+    background: var(--gradient-success);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.stats-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 1rem;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/*Formulário */
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--secondary-color);
+    border-radius: 16px;
+    border: 2px solid var(--border-color);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+    height: 3.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.form-floating > .form-control:focus,
+.form-floating > .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-floating > label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.form-check {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-check:hover {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-left: 0.5rem;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/*Botão de busca */
+.search-btn {
+    background: var(--gradient-vacation);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    width: 100%;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+}
+
+.search-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/*Resultados */
+.results-section {
+    display: none;
+    margin-top: 3rem;
+}
+
+.results-section.show {
+    display: block;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.results-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.results-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.results-summary {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+/*Estatísticas dos resultados */
+.results-stats {
+    background: var(--gradient-warning);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.results-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.results-stat-item {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.results-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.results-stat-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/* Sugestões inteligentes */
+.suggestions {
+    margin-bottom: 2rem;
+}
+
+.suggestions-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggestion-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.suggestion-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--card-shadow-lg);
+}
+
+.suggestion-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Resultados por cidade */
+.city-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.city-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-lg);
+}
+
+.city-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.city-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.city-state {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.city-stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.city-stat {
+    background: var(--secondary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.neighborhoods {
+    display: grid;
+    gap: 1rem;
+}
+
+.neighborhood-card {
+    background: var(--secondary-color);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.neighborhood-card:hover {
+    background: white;
+    box-shadow: var(--card-shadow);
+}
+
+.neighborhood-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.neighborhood-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.neighborhood-stats {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.neighborhood-stat {
+    background: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+/*Opções de viagem */
+.travel-options {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.travel-option {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.travel-option:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.option-dates {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.option-price {
+    text-align: right;
+}
+
+.option-total {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--success-color);
+}
+
+.option-savings {
+    font-size: 0.75rem;
+    color: var(--success-color);
+    margin-top: 0.25rem;
+}
+
+.option-details {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.option-detail {
+    background: var(--secondary-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.weekend-badge {
+    background: var(--gradient-success);
+    color: var(--text-primary);
+}
+
+.option-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-offer-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.view-offer-btn:hover {
+    background: var(--primary-hover);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Estados vazios e erro */
+.empty-state, .error-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.empty-icon, .error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-title, .error-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-description, .error-description {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+/* Loading */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .vacation-title {
+        font-size: 2rem;
+    }
+
+    .vacation-form-card {
+        padding: 1.5rem;
+        margin-top: -1rem;
+    }
+
+    .stats-grid,
+    .results-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .city-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .city-stats {
+        width: 100%;
+    }
+
+    .option-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .option-price {
+        text-align: left;
+    }
+}
+</style>
+
+<div class="vacation-header">
+    <div class="container">
+        <h1 class="vacation-title">Planejador de Férias</h1>
+        <p class="vacation-subtitle">
+            Informe seu orçamento e preferências, e descubra todas as opções de viagem disponíveis!
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="vacation-form-card">
+        <h2 class="form-title">
+            <i class="bi bi-calendar-heart"></i>
+            Configure sua viagem dos sonhos
+        </h2>
+
+        <!-- Estatísticas Rápidas -->
+        {% if estatisticas_rapidas.total_opcoes > 0 %}
+        <div class="quick-stats">
+            <div class="stats-title">
+                <i class="bi bi-info-circle"></i>
+                Informações úteis para planejar
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">R$ {{ estatisticas_rapidas.preco_medio_dia }}</div>
+                    <div class="stat-label">Preço médio/dia</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ estatisticas_rapidas.total_cidades }}</div>
+                    <div class="stat-label">Cidades disponíveis</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">R$ {{ estatisticas_rapidas.orcamento_sugerido_3_noites }}</div>
+                    <div class="stat-label">Para 3 noites</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">R$ {{ estatisticas_rapidas.orcamento_sugerido_7_noites }}</div>
+                    <div class="stat-label">Para 7 noites</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <form id="vacation-form">
+            <!-- Seção: Orçamento e Hospedagem -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-wallet2"></i>
+                    Orçamento e Hospedagem
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="number" id="orcamento_total" name="orcamento_total"
+                                   class="form-control" step="0.01" min="100" max="50000" required>
+                            <label for="orcamento_total">Orçamento Total (R$) *</label>
+                        </div>
+                        <div class="help-text">Quanto você quer gastar no total com hospedagem?</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="number" id="hospedes" name="hospedes"
+                                   class="form-control" min="1" max="20" required>
+                            <label for="hospedes">Número de Hóspedes *</label>
+                        </div>
+                        <div class="help-text">Quantas pessoas vão viajar?</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção: Duração e Datas -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-calendar-range"></i>
+                    Duração e Período
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="number" id="quantidade_noites" name="quantidade_noites"
+                                   class="form-control" min="1" max="30" required>
+                            <label for="quantidade_noites">Quantidade de Noites *</label>
+                        </div>
+                        <div class="help-text">Quantas noites você quer ficar?</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select id="periodo_busca" name="periodo_busca" class="form-select" required>
+                                <option value="" disabled selected></option>
+                                <option value="30">Próximos 30 dias</option>
+                                <option value="60">Próximos 2 meses</option>
+                                <option value="90">Próximos 3 meses</option>
+                                <option value="180">Próximos 6 meses</option>
+                            </select>
+                            <label for="periodo_busca">Período de Busca *</label>
+                        </div>
+                        <div class="help-text">Em qual período você pode viajar?</div>
+                    </div>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="inclui_fim_de_semana" name="inclui_fim_de_semana">
+                    <label class="form-check-label" for="inclui_fim_de_semana">
+                        <strong>Deve incluir fim de semana</strong>
+                    </label>
+                    <div class="help-text">A viagem deve incluir sábado e domingo?</div>
+                </div>
+            </div>
+
+            <!-- Seção: Preferências Opcionais -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-sliders"></i>
+                    Preferências (Opcional)
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="number" id="quartos_minimo" name="quartos_minimo"
+                                   class="form-control" min="1" max="10">
+                            <label for="quartos_minimo">Mínimo de Quartos</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="number" id="camas_minimo" name="camas_minimo"
+                                   class="form-control" min="1" max="20">
+                            <label for="camas_minimo">Mínimo de Camas</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" id="search-btn" class="search-btn">
+                    <i class="bi bi-search me-2"></i>
+                    Encontrar Opções de Viagem
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resultados -->
+    <div id="results-section" class="results-section">
+        <!-- Header dos Resultados -->
+        <div class="results-header">
+            <h2 class="results-title">Suas Opções de Viagem</h2>
+            <p class="results-summary" id="results-summary"></p>
+        </div>
+
+        <!-- Estatísticas dos Resultados -->
+        <div id="results-stats" class="results-stats">
+            <h3 style="margin-bottom: 0; font-size: 1.5rem; font-weight: 600;">Resumo da sua busca</h3>
+            <div class="results-stats-grid" id="results-stats-grid">
+                <!-- Preenchido dinamicamente -->
+            </div>
+        </div>
+
+        <!-- Sugestões Inteligentes -->
+        <div id="suggestions-section" class="suggestions">
+            <h4 class="suggestions-title">
+                <i class="bi bi-lightbulb"></i>
+                Sugestões Inteligentes
+            </h4>
+            <div id="suggestions-container">
+                <!-- Preenchido dinamicamente -->
+            </div>
+        </div>
+
+        <!-- Resultados por Cidade -->
+        <div id="cities-container">
+            <!-- Preenchido dinamicamente -->
+        </div>
+    </div>
+
+    <!-- Estado Vazio -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <i class="bi bi-search-heart empty-icon"></i>
+        <h3 class="empty-title">Nenhuma opção encontrada</h3>
+        <p class="empty-description">
+            Não encontramos opções que se encaixem nos seus critérios.
+            Tente ajustar o orçamento, período ou flexibilizar os requisitos.
+        </p>
+    </div>
+
+    <!-- Estado de Erro -->
+    <div id="error-state" class="error-state" style="display: none;">
+        <i class="bi bi-exclamation-triangle-fill error-icon"></i>
+        <h3 class="error-title">Erro ao buscar opções</h3>
+        <p class="error-description">
+            Ocorreu um erro ao processar sua busca. Tente novamente.
+        </p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos do DOM
+    const form = document.getElementById('vacation-form');
+    const searchBtn = document.getElementById('search-btn');
+    const resultsSection = document.getElementById('results-section');
+    const emptyState = document.getElementById('empty-state');
+    const errorState = document.getElementById('error-state');
+
+    // URL da API
+    const apiUrl = "{% url 'core:api_planejador_ferias' %}";
+
+    // Event listener do formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        performSearch();
+    });
+
+    // Atualizar orçamento por dia em tempo real
+    const orcamentoInput = document.getElementById('orcamento_total');
+    const noitesInput = document.getElementById('quantidade_noites');
+
+    function updateBudgetInfo() {
+        const orcamento = parseFloat(orcamentoInput.value) || 0;
+        const noites = parseInt(noitesInput.value) || 1;
+        const precoPorDia = orcamento / noites;
+
+        // Atualizar placeholder ou hint visual se necessário
+        if (orcamento > 0 && noites > 0) {
+            const hint = `≈ R$ ${precoPorDia.toFixed(2)} por dia`;
+            // Você pode adicionar um elemento para mostrar essa informação
+        }
+    }
+
+    orcamentoInput.addEventListener('input', updateBudgetInfo);
+    noitesInput.addEventListener('input', updateBudgetInfo);
+
+    function performSearch() {
+        // Mostrar loading
+        searchBtn.classList.add('loading');
+        searchBtn.disabled = true;
+        searchBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Buscando opções...';
+
+        // Ocultar estados anteriores
+        resultsSection.classList.remove('show');
+        emptyState.style.display = 'none';
+        errorState.style.display = 'none';
+
+        // Preparar dados do formulário
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        // Fazer requisição
+        fetch(`${apiUrl}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                displayResults(data);
+            })
+            .catch(error => {
+                console.error('Erro na busca:', error);
+                showError();
+            })
+            .finally(() => {
+                // Resetar botão
+                searchBtn.classList.remove('loading');
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="bi bi-search me-2"></i>Encontrar Opções de Viagem';
+            });
+    }
+
+    function displayResults(data) {
+        if (data.total_opcoes === 0) {
+            showEmpty();
+            return;
+        }
+
+        // Atualizar resumo
+        updateResultsSummary(data);
+
+        // Atualizar estatísticas
+        updateResultsStats(data.estatisticas);
+
+        // Atualizar sugestões
+        updateSuggestions(data.sugestoes);
+
+        // Atualizar resultados por cidade
+        updateCitiesResults(data.resultados_por_cidade);
+
+        // Mostrar resultados
+        resultsSection.classList.add('show');
+
+        // Scroll suave para os resultados
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function updateResultsSummary(data) {
+        const summary = document.getElementById('results-summary');
+        const criterios = data.criterios_busca;
+
+        summary.innerHTML = `
+            Encontramos <strong>${data.total_opcoes}</strong> opções em
+            <strong>${data.estatisticas.total_cidades}</strong> cidades para
+            <strong>${criterios.hospedes}</strong> hóspede${criterios.hospedes > 1 ? 's' : ''} por
+            <strong>${criterios.quantidade_noites}</strong> noite${criterios.quantidade_noites > 1 ? 's' : ''}
+            dentro do seu orçamento de <strong>R$ ${criterios.orcamento_total}</strong>
+        `;
+    }
+
+    function updateResultsStats(stats) {
+        const container = document.getElementById('results-stats-grid');
+
+        container.innerHTML = `
+            <div class="results-stat-item">
+                <div class="results-stat-value">${stats.total_opcoes}</div>
+                <div class="results-stat-label">Opções encontradas</div>
+            </div>
+            <div class="results-stat-item">
+                <div class="results-stat-value">R$ ${stats.economia_media}</div>
+                <div class="results-stat-label">Economia média</div>
+            </div>
+            <div class="results-stat-item">
+                <div class="results-stat-value">${stats.percentual_orcamento_usado}%</div>
+                <div class="results-stat-label">Do orçamento usado</div>
+            </div>
+            <div class="results-stat-item">
+                <div class="results-stat-value">${stats.opcoes_com_fim_de_semana}</div>
+                <div class="results-stat-label">Com fim de semana</div>
+            </div>
+        `;
+    }
+
+    function updateSuggestions(sugestoes) {
+        const container = document.getElementById('suggestions-container');
+
+        if (!sugestoes || sugestoes.length === 0) {
+            document.getElementById('suggestions-section').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('suggestions-section').style.display = 'block';
+
+        container.innerHTML = sugestoes.map(sugestao => `
+            <div class="suggestion-card">
+                <div class="suggestion-title">${sugestao.titulo}</div>
+                <div class="suggestion-description">${sugestao.descricao}</div>
+            </div>
+        `).join('');
+    }
+
+    function updateCitiesResults(cidades) {
+        const container = document.getElementById('cities-container');
+
+        container.innerHTML = cidades.map(cidade => `
+            <div class="city-card">
+                <div class="city-header">
+                    <div>
+                        <h3 class="city-name">${cidade.cidade_nome}</h3>
+                        <div class="city-state">${cidade.estado}</div>
+                    </div>
+                    <div class="city-stats">
+                        <div class="city-stat">${cidade.total_opcoes} opções</div>
+                        <div class="city-stat">R$ ${cidade.preco_medio.toFixed(2)} médio</div>
+                        <div class="city-stat">Economia: R$ ${cidade.economia_media.toFixed(2)}</div>
+                    </div>
+                </div>
+
+                <div class="neighborhoods">
+                    ${Object.values(cidade.bairros).map(bairro => `
+                        <div class="neighborhood-card">
+                            <div class="neighborhood-header">
+                                <h4 class="neighborhood-name">${bairro.bairro_nome}</h4>
+                            </div>
+
+                            <div class="neighborhood-stats">
+                                <div class="neighborhood-stat">${bairro.total_opcoes} opções</div>
+                                <div class="neighborhood-stat">R$ ${bairro.preco_medio.toFixed(2)} médio</div>
+                                <div class="neighborhood-stat">Economia: R$ ${bairro.economia_media.toFixed(2)}</div>
+                            </div>
+
+                            <div class="travel-options">
+                                ${bairro.opcoes.map(opcao => createTravelOptionHTML(opcao)).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function createTravelOptionHTML(opcao) {
+    const checkin = new Date(opcao.data_checkin).toLocaleDateString('pt-BR');
+    const checkout = new Date(opcao.data_checkout).toLocaleDateString('pt-BR');
+
+    return `
+        <div class="travel-option">
+            <div class="option-header">
+                <div class="option-dates">
+                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                        ${opcao.tipo_acomodacao || opcao.anuncio.titulo || 'Acomodação'}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                        <i class="bi bi-calendar-check"></i>
+                        ${checkin} - ${checkout}
+                    </div>
+                </div>
+                <div class="option-price">
+                    <div class="option-total">R$ ${opcao.preco_total.toFixed(2)}</div>
+                    <div class="option-savings">Economia: R$ ${opcao.economia.toFixed(2)}</div>
+                </div>
+            </div>
+
+            <div class="option-details">
+                <div class="option-detail">
+                    <i class="bi bi-door-open"></i>
+                    ${opcao.imovel.quartos || 'N/A'} quartos
+                </div>
+                <div class="option-detail">
+                    <i class="bi bi-bed"></i>
+                    ${opcao.imovel.camas || 'N/A'} camas
+                </div>
+                <div class="option-detail">
+                    <i class="bi bi-droplet"></i>
+                    ${opcao.imovel.banheiros || 'N/A'} banheiros
+                </div>
+                <div class="option-detail">
+                    <i class="bi bi-people"></i>
+                    ${opcao.hospedes} hóspedes
+                </div>
+                ${opcao.inclui_fim_de_semana ?
+                    '<div class="option-detail weekend-badge"><i class="bi bi-calendar-week"></i>Fim de semana</div>'
+                    : ''
+                }
+                ${opcao.avaliacao.nota ?
+                    `<div class="option-detail"><i class="bi bi-star-fill"></i>${opcao.avaliacao.nota.toFixed(1)} (${opcao.avaliacao.quantidade})</div>`
+                    : ''
+                }
+            </div>
+
+            <div class="option-actions">
+                ${opcao.anuncio && opcao.anuncio.link ?
+                    `<a href="${opcao.anuncio.link}" target="_blank" class="view-offer-btn">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Ver Oferta
+                    </a>`
+                    : `<span class="view-offer-btn" style="background: #e5e7eb; color: #6b7280; cursor: not-allowed;">
+                        <i class="bi bi-info-circle me-1"></i>Link indisponível
+                    </span>`
+                }
+            </div>
+        </div>
+    `;
+}
+
+    function showEmpty() {
+        resultsSection.classList.remove('show');
+        emptyState.style.display = 'block';
+        errorState.style.display = 'none';
+    }
+
+    function showError() {
+        resultsSection.classList.remove('show');
+        emptyState.style.display = 'none';
+        errorState.style.display = 'block';
+    }
+
+    // Inicializar com valores padrão sugeridos
+    function initializeDefaults() {
+        // Definir valores padrão baseados nas estatísticas
+        const stats = {{ estatisticas_rapidas|safe }};
+
+        if (stats && stats.preco_medio_dia > 0) {
+            // Sugerir orçamento para 7 noites
+            document.getElementById('orcamento_total').placeholder = `Ex: ${stats.orcamento_sugerido_7_noites}`;
+            document.getElementById('quantidade_noites').value = '7';
+            document.getElementById('hospedes').value = '2';
+            document.getElementById('periodo_busca').value = '90';
+        }
+    }
+
+    // Inicializar a página
+    initializeDefaults();
+    updateBudgetInfo();
+});
+</script>
+{% endblock %}

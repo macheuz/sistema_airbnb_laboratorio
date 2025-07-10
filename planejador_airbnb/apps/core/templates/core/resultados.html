@@ -1,0 +1,1452 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Resultados da Busca - PlanB{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f8fafc;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --card-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+body {
+    background: var(--secondary-color);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+
+.results-header {
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.results-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.results-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.results-count {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.analytics-section {
+    margin-bottom: 3rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    height: 100%;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.chart-toggle {
+    display: flex;
+    background: var(--secondary-color);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.toggle-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.toggle-btn:hover:not(.active) {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+}
+
+.chart-container {
+    position: relative;
+    height: 350px;
+}
+
+.chart-description {
+    padding: 1rem;
+    background: #f8fafc;
+    margin-top: 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.chart-description ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.chart-description li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.chart-description li:before {
+    content: "•";
+    color: #6366f1;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+.chart-description strong {
+    font-weight: 600;
+}
+
+.chart-description .bi-info-circle,
+.chart-description .bi-bar-chart {
+    color: #6366f1;
+}
+
+.sidebar {
+    position: sticky;
+    top: 2rem;
+}
+
+.filter-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.filter-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-group {
+    margin-bottom: 1.5rem;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: white;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.filter-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    outline: none;
+}
+
+.filter-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.filter-btn:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.filter-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.filter-btn-secondary {
+    width: 100%;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.filter-btn-secondary:hover {
+    background: #e9ecef;
+    color: #495057;
+    border-color: #6c757d;
+}
+
+.active-filters {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-top: 1rem;
+}
+
+.filters-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-tag {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.input-group-text {
+    background: #f8f9fa;
+    border: 2px solid var(--border-color);
+    border-right: none;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.loading .btn-text { display: none; }
+.loading .btn-loading { display: inline-flex !important; }
+
+.results-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.property-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.property-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-color);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.property-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-lg);
+}
+
+.property-card:hover::before {
+    transform: scaleY(1);
+}
+
+.property-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.property-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.property-location {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.property-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.detail-badge {
+    background: var(--secondary-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid var(--border-color);
+}
+
+.rating-badge {
+    background: linear-gradient(135deg, #fff3cd 0%, #fbbf24 100%);
+    color: #92400e;
+    border-color: #fbbf24;
+}
+
+.price-section {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0ea5e9;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: right;
+    position: relative;
+    overflow: hidden;
+}
+
+.price-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), #0ea5e9);
+}
+
+.price-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.price-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--success-color);
+    margin-bottom: 0.25rem;
+}
+
+.price-dates {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.view-offer-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.view-offer-btn:hover {
+    background: var(--primary-hover);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-description {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.back-to-search {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.back-to-search:hover {
+    background: var(--primary-hover);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.page-link {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.page-link:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.page-link.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.page-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-link.disabled:hover {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+    background: white;
+}
+
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.chart-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 350px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.chart-loading::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.75rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .results-header {
+        padding: 1.5rem 0;
+    }
+
+    .results-title {
+        font-size: 1.5rem;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-toggle {
+        width: 100%;
+        justify-content: space-around;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+
+    .sidebar {
+        position: static;
+        margin-bottom: 2rem;
+    }
+
+    .property-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .price-section {
+        text-align: left;
+        margin-top: 1rem;
+    }
+
+    .property-details {
+        margin: 0.75rem 0;
+    }
+
+    .filters-tags {
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="results-header">
+    <div class="container">
+        <h1 class="results-title">Suas Melhores Opções</h1>
+        <p class="results-subtitle">
+            Encontramos <span class="results-count">{{ total_resultados }}</span>
+            acomodações perfeitas para sua viagem, ordenadas pelo melhor custo-benefício.
+        </p>
+    </div>
+</div>
+
+{% if total_resultados > 0 %}
+
+<div class="container analytics-section">
+    <div class="row g-4">
+
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Análise de Preços</h3>
+                    <div class="chart-toggle">
+                        <button class="toggle-btn active" id="btn-quartos" onclick="toggleBarChart('quartos')">
+                            <i class="bi bi-door-open-fill"></i>
+                            Quartos
+                        </button>
+                        <button class="toggle-btn" id="btn-camas" onclick="toggleBarChart('camas')">
+                            <i class="bi bi-bed-fill"></i>
+                            Camas
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="graficoPrecos"></canvas>
+                </div>
+                <div class="chart-description">
+                    <div style="margin-bottom: 0.5rem;">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        <strong>Como interpretar:</strong>
+                    </div>
+                    <ul>
+                        <li>Cada barra colorida representa o preço médio para propriedades com diferentes quantidades de quartos/camas</li>
+                        <li><strong style="color: #ec4899;">Barra rosa:</strong> Média geral de todas as categorias (referência de preço)</li>
+                        <li><strong>4+ Quartos/Camas:</strong> Agrupa propriedades grandes (4 ou mais quartos/camas)</li>
+                        <li>Compare as barras para entender como o preço varia conforme o tamanho da propriedade</li>
+                        <li>Use a barra rosa como referência para identificar opções acima ou abaixo da média</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Variação de Preços no Mês</h3>
+                    <div class="chart-toggle">
+                        <button class="toggle-btn active" id="btn-linha-quartos" onclick="toggleLineChart('quartos')">
+                            <i class="bi bi-door-open-fill"></i>
+                            Quartos
+                        </button>
+                        <button class="toggle-btn" id="btn-linha-camas" onclick="toggleLineChart('camas')">
+                            <i class="bi bi-bed-fill"></i>
+                            Camas
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="graficoTendencia"></canvas>
+                </div>
+                <div class="chart-description">
+                    <div style="margin-bottom: 0.5rem;">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Como interpretar:</strong>
+                    </div>
+                    <ul>
+                        <li>Cada linha mostra preços para propriedades com diferentes quantidades de quartos/camas</li>
+                        <li><strong style="color: #ec4899;">Linha tracejada rosa:</strong> Média geral de todas as categorias</li>
+                        <li><strong>4+ Quartos/Camas:</strong> Agrupa todas as propriedades com 4 ou mais quartos/camas</li>
+                        <li>Use este gráfico para identificar os melhores dias do mês para sua viagem</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="container">
+    <div class="row">
+
+        <div class="col-lg-3">
+            <div class="sidebar">
+                <div class="filter-card">
+                    <h4 class="filter-title">
+                        <i class="bi bi-funnel"></i>
+                        Filtros
+                    </h4>
+                    <form method="get" action="{% url 'core:resultados_busca' %}" id="filter-form">
+                        {% for field_name, value in request.GET.items %}
+                            {% if field_name != 'quartos' and field_name != 'camas' and field_name != 'banheiros' and field_name != 'preco_maximo' and field_name != 'page' %}
+                                <input type="hidden" name="{{ field_name }}" value="{{ value }}">
+                            {% endif %}
+                        {% endfor %}
+
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-door-open me-1"></i>
+                                Quartos
+                            </label>
+                            <select name="quartos" class="filter-select">
+                                <option value="">Qualquer quantidade</option>
+                                <option value="1" {% if request.GET.quartos == '1' %}selected{% endif %}>1+ quarto</option>
+                                <option value="2" {% if request.GET.quartos == '2' %}selected{% endif %}>2+ quartos</option>
+                                <option value="3" {% if request.GET.quartos == '3' %}selected{% endif %}>3+ quartos</option>
+                                <option value="4" {% if request.GET.quartos == '4' %}selected{% endif %}>4+ quartos</option>
+                                <option value="5" {% if request.GET.quartos == '5' %}selected{% endif %}>5+ quartos</option>
+                            </select>
+                        </div>
+
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-bed me-1"></i>
+                                Camas
+                            </label>
+                            <select name="camas" class="filter-select">
+                                <option value="">Qualquer quantidade</option>
+                                <option value="1" {% if request.GET.camas == '1' %}selected{% endif %}>1+ cama</option>
+                                <option value="2" {% if request.GET.camas == '2' %}selected{% endif %}>2+ camas</option>
+                                <option value="3" {% if request.GET.camas == '3' %}selected{% endif %}>3+ camas</option>
+                                <option value="4" {% if request.GET.camas == '4' %}selected{% endif %}>4+ camas</option>
+                                <option value="5" {% if request.GET.camas == '5' %}selected{% endif %}>5+ camas</option>
+                            </select>
+                        </div>
+
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-droplet me-1"></i>
+                                Banheiros
+                            </label>
+                            <select name="banheiros" class="filter-select">
+                                <option value="">Qualquer quantidade</option>
+                                <option value="1" {% if request.GET.banheiros == '1' %}selected{% endif %}>1+ banheiro</option>
+                                <option value="2" {% if request.GET.banheiros == '2' %}selected{% endif %}>2+ banheiros</option>
+                                <option value="3" {% if request.GET.banheiros == '3' %}selected{% endif %}>3+ banheiros</option>
+                            </select>
+                        </div>
+
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-currency-dollar me-1"></i>
+                                Preço máximo por dia
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number"
+                                       name="preco_maximo"
+                                       class="filter-select"
+                                       placeholder="Ex: 300"
+                                       step="0.01"
+                                       min="0"
+                                       value="{{ request.GET.preco_maximo }}"
+                                       style="border-left: none;">
+                            </div>
+                            <small class="text-muted">Deixe vazio para ver todos os preços</small>
+                        </div>
+
+
+                        <button type="submit" class="filter-btn" id="apply-filters-btn">
+                            <span class="btn-text">
+                                <i class="bi bi-search me-2"></i>
+                                Aplicar Filtros
+                            </span>
+                            <span class="btn-loading d-none">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Aplicando...
+                            </span>
+                        </button>
+
+
+                        {% if request.GET.quartos or request.GET.camas or request.GET.banheiros or request.GET.preco_maximo %}
+                        <button type="button" class="filter-btn-secondary mt-2" id="clear-filters-btn">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Limpar Filtros
+                        </button>
+                        {% endif %}
+                    </form>
+
+
+                    {% if request.GET.quartos or request.GET.camas or request.GET.banheiros or request.GET.preco_maximo %}
+                    <div class="active-filters">
+                        <h6 class="filter-label">Filtros Ativos:</h6>
+                        <div class="filters-tags">
+                            {% if request.GET.quartos %}
+                                <span class="filter-tag">
+                                    <i class="bi bi-door-open me-1"></i>
+                                    {{ request.GET.quartos }}+ quartos
+                                </span>
+                            {% endif %}
+                            {% if request.GET.camas %}
+                                <span class="filter-tag">
+                                    <i class="bi bi-bed me-1"></i>
+                                    {{ request.GET.camas }}+ camas
+                                </span>
+                            {% endif %}
+                            {% if request.GET.banheiros %}
+                                <span class="filter-tag">
+                                    <i class="bi bi-droplet me-1"></i>
+                                    {{ request.GET.banheiros }}+ banheiros
+                                </span>
+                            {% endif %}
+                            {% if request.GET.preco_maximo %}
+                                <span class="filter-tag">
+                                    <i class="bi bi-currency-dollar me-1"></i>
+                                    Max: R$ {{ request.GET.preco_maximo }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-9">
+            <div class="results-grid">
+                {% for resultado in resultados %}
+                <div class="property-card">
+                    <div class="property-header">
+                        <div>
+                            {% with anuncio=resultado.anuncios.first %}
+                            <h3 class="property-title">{{ anuncio.titulo|default:resultado.imovel.tipo_acomodacao }}</h3>
+                            <div class="property-location">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                {{ resultado.imovel.bairro.nome }}, {{ resultado.imovel.cidade.nome }}
+                            </div>
+                            {% endwith %}
+                        </div>
+
+                        <div class="price-section">
+                            <div class="price-label">Preço total</div>
+                            <div class="price-amount">R$ {{ resultado.preco_total }}</div>
+                            <div class="price-label" style="font-size: 0.85rem; text-align: right; margin-top: -0.25rem;">R$ {{ resultado.preco_por_dia }} / noite</div>
+                            <div class="price-dates">
+                                {{ resultado.data_checkin|date:"d/m/Y" }} - {{ resultado.data_checkout|date:"d/m/Y" }}
+                            </div>
+                            {% with anuncio=resultado.anuncios.first %}
+                            {% if anuncio.link %}
+                            <a href="{{ anuncio.link }}" class="view-offer-btn" target="_blank">
+                                Ver Oferta
+                            </a>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="property-details">
+                        <span class="detail-badge">
+                            <i class="bi bi-door-open-fill"></i>
+                            {{ resultado.imovel.quartos|default:"N/A" }} Quarto(s)
+                        </span>
+                        <span class="detail-badge">
+                            <i class="bi bi-bed-fill"></i>
+                            {{ resultado.imovel.camas|default:"N/A" }} Cama(s)
+                        </span>
+                        <span class="detail-badge">
+                            <i class="bi bi-droplet-fill"></i>
+                            {{ resultado.imovel.banheiros|default:"N/A" }} Banheiro(s)
+                        </span>
+                        <span class="detail-badge">
+                            <i class="bi bi-people-fill"></i>
+                            {{ resultado.hospedes }} Hóspede(s)
+                        </span>
+
+                        {% with avaliacao=resultado.imovel.avaliacoes.first %}
+                        {% if avaliacao and avaliacao.nota %}
+                        <span class="detail-badge rating-badge">
+                            <i class="bi bi-star-fill"></i>
+                            {{ avaliacao.nota }} ({{ avaliacao.qtd_avaliacoes }})
+                        </span>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-search-heart"></i>
+                    </div>
+                    <h3 class="empty-title">Nenhum resultado encontrado</h3>
+                    <p class="empty-description">
+                        Não encontramos acomodações que correspondam aos seus critérios de busca.
+                        Tente ajustar os filtros ou buscar por outras datas.
+                    </p>
+                    <a href="{% url 'core:home' %}" class="back-to-search">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Nova Busca
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if is_paginated %}
+            <div class="pagination-wrapper">
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                    <a class="page-link" href="?{{ query_params }}&page={{ page_obj.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    {% else %}
+                    <span class="page-link disabled">
+                        <i class="bi bi-chevron-left"></i>
+                    </span>
+                    {% endif %}
+
+                    {% for i in paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <span class="page-link active">{{ i }}</span>
+                        {% else %}
+                            <a class="page-link" href="?{{ query_params }}&page={{ i }}">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <a class="page-link" href="?{{ query_params }}&page={{ page_obj.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    {% else %}
+                    <span class="page-link disabled">
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados Gráfico
+    const dataQuartos = JSON.parse('{{ chart_data_quartos_json|safe }}');
+    const dataCamas = JSON.parse('{{ chart_data_camas_json|safe }}');
+    const dataTendenciaQuartos = JSON.parse('{{ chart_data_tendencia_quartos_json|safe }}');
+    const dataTendenciaCamas = JSON.parse('{{ chart_data_tendencia_camas_json|safe }}');
+
+
+    let currentBarChart = null;
+    let currentLineChart = null;
+    let currentBarView = 'quartos';
+    let currentLineView = 'quartos';
+
+
+    const colors = {
+        primary: '#6366f1',
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        secondary: '#64748b'
+    };
+
+    const gradientColors = [
+        { bg: 'rgba(99, 102, 241, 0.1)', border: '#6366f1' },
+        { bg: 'rgba(16, 185, 129, 0.1)', border: '#10b981' },
+        { bg: 'rgba(245, 158, 11, 0.1)', border: '#f59e0b' },
+        { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444' },
+        { bg: 'rgba(100, 116, 139, 0.1)', border: '#64748b' }
+    ];
+
+    // Configurações do gráfico
+    const baseBarConfig = {
+        type: 'bar',
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: colors.primary,
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Preço médio: R$ ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return 'R$ ' + value.toFixed(0); },
+                        color: '#64748b',
+                        font: { size: 12 }
+                    },
+                    grid: { color: '#e2e8f0', borderWidth: 0 },
+                    border: { display: false }
+                },
+                x: {
+                    ticks: { color: '#64748b', font: { size: 12 } },
+                    grid: { display: false },
+                    border: { display: false }
+                }
+            },
+            animation: { duration: 600, easing: 'easeInOutQuart' }
+        }
+    };
+
+    const baseLineConfig = {
+        type: 'line',
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#1e293b',
+                        font: { size: 12, weight: '500' },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: colors.primary,
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return 'R$ ' + value.toFixed(0); },
+                        color: '#64748b',
+                        font: { size: 12 }
+                    },
+                    grid: { color: '#e2e8f0', borderWidth: 0 },
+                    border: { display: false }
+                },
+                x: {
+                    ticks: { color: '#64748b', font: { size: 12 } },
+                    grid: { color: '#e2e8f0', borderWidth: 0 },
+                    border: { display: false }
+                }
+            },
+            elements: {
+                line: { borderWidth: 3, tension: 0.4 },
+                point: { radius: 5, hoverRadius: 8, borderWidth: 2 }
+            },
+            animation: { duration: 600, easing: 'easeInOutQuart' }
+        }
+    };
+
+
+    function createBarChartConfig(data, type) {
+        const config = JSON.parse(JSON.stringify(baseBarConfig));
+
+        // Filtrar dados nulos antes do processamento
+        const dadosFiltrados = data.filter(item => {
+            const categoria = type === 'quartos' ?
+                (item.quartos_agrupados || item.imovel__quartos) :
+                (item.camas_agrupadas || item.imovel__camas);
+            return categoria !== null && categoria !== undefined && !isNaN(categoria);
+        });
+
+        // Calcular preço médio geral apenas dos dados válidos
+        let precoMedioGeral = 0;
+        if (dadosFiltrados.length > 0) {
+            const totalPrecos = dadosFiltrados.reduce((sum, item) => sum + parseFloat(item.preco_medio), 0);
+            precoMedioGeral = totalPrecos / dadosFiltrados.length;
+        }
+
+        // Cores vibrantes para cada barra
+        const coresBarras = [
+            '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#14b8a6'
+        ];
+
+        if (type === 'quartos') {
+            const valores = dadosFiltrados.map(item => parseFloat(item.preco_medio));
+            const labels = dadosFiltrados.map(item => {
+                const quartos = item.quartos_agrupados || item.imovel__quartos;
+                return quartos === 4 ? '4+ Quartos' : `${quartos} Quarto(s)`;
+            });
+            const cores = dadosFiltrados.map((_, index) => coresBarras[index % coresBarras.length]);
+            const coresBorda = cores.map(cor => cor);
+
+            // Adicionar barra de média
+            if (precoMedioGeral > 0 && dadosFiltrados.length > 0) {
+                valores.push(precoMedioGeral);
+                labels.push('Média Geral');
+                cores.push('#ec4899');
+                coresBorda.push('#db2777');
+            }
+
+            config.data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Preço Médio',
+                    data: valores,
+                    backgroundColor: cores,
+                    borderColor: coresBorda,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            };
+        } else {
+            const valores = dadosFiltrados.map(item => parseFloat(item.preco_medio));
+            const labels = dadosFiltrados.map(item => {
+                const camas = item.camas_agrupadas || item.imovel__camas;
+                return camas === 4 ? '4+ Camas' : `${camas} Cama(s)`;
+            });
+            const cores = dadosFiltrados.map((_, index) => coresBarras[index % coresBarras.length]);
+            const coresBorda = cores.map(cor => cor);
+
+            // Adicionar barra de média
+            if (precoMedioGeral > 0 && dadosFiltrados.length > 0) {
+                valores.push(precoMedioGeral);
+                labels.push('Média Geral');
+                cores.push('#ec4899');
+                coresBorda.push('#db2777');
+            }
+
+            config.data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Preço Médio',
+                    data: valores,
+                    backgroundColor: cores,
+                    borderColor: coresBorda,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            };
+        }
+
+        // Se não há dados válidos
+        if (dadosFiltrados.length === 0) {
+            config.data = {
+                labels: ['Nenhum dado disponível'],
+                datasets: [{
+                    label: 'Preço Médio',
+                    data: [0],
+                    backgroundColor: ['#e5e7eb'],
+                    borderColor: ['#d1d5db'],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            };
+        }
+
+        // tooltip
+        config.options.plugins.tooltip.callbacks.label = function(context) {
+            if (context.label === 'Nenhum dado disponível') {
+                return 'Nenhum dado disponível para esta categoria';
+            }
+            let label = 'R$ ' + context.parsed.y.toFixed(2);
+            if (context.label === 'Média Geral') {
+                label = '🎯 Média Geral: R$ ' + context.parsed.y.toFixed(2);
+            }
+            return label;
+        };
+
+        return config;
+    }
+
+    function createLineChartConfig(data, type) {
+        const config = JSON.parse(JSON.stringify(baseLineConfig));
+
+        // Processar dados de tendência mensal por dia
+        const categoryData = data.filter(item => !item.is_media_geral);
+        const averageData = data.filter(item => item.is_media_geral);
+
+        // Agrupar dados por dia e quantidade
+        const groupedData = {};
+        const days = new Set();
+        const quantities = new Set();
+
+        categoryData.forEach(item => {
+            const day = item.dia_mes;
+            const quantity = type === 'quartos' ? item.imovel__quartos : item.imovel__camas;
+            const price = parseFloat(item.preco_medio);
+
+            if (day && quantity !== null && quantity !== undefined && price) {
+                days.add(day);
+                quantities.add(quantity);
+
+                if (!groupedData[quantity]) {
+                    groupedData[quantity] = {};
+                }
+                groupedData[quantity][day] = price;
+            }
+        });
+
+        // Processar dados de média geral
+        const averageGroupedData = {};
+        averageData.forEach(item => {
+            const day = item.dia_mes;
+            const price = parseFloat(item.preco_medio);
+
+            if (day && price) {
+                days.add(day);
+                averageGroupedData[day] = price;
+            }
+        });
+
+        if (days.size === 0) {
+            config.data = { labels: [], datasets: [] };
+            return config;
+        }
+
+        const sortedDays = Array.from(days).sort((a, b) => a - b);
+        const sortedQuantities = Array.from(quantities).sort((a, b) => a - b);
+
+        // Criar datasets para categorias
+        const datasets = [];
+
+        sortedQuantities.forEach((quantity, index) => {
+            const color = gradientColors[index % gradientColors.length];
+            let label;
+
+            if (quantity === 4) {
+                label = type === 'quartos' ? '4+ Quartos' : '4+ Camas';
+            } else {
+                label = type === 'quartos' ? `${quantity} Quarto(s)` : `${quantity} Cama(s)`;
+            }
+
+            datasets.push({
+                label: label,
+                data: sortedDays.map(day => groupedData[quantity] && groupedData[quantity][day] || null),
+                backgroundColor: color.bg,
+                borderColor: color.border,
+                fill: false,
+                spanGaps: true,
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            });
+        });
+
+        // Adicionar dataset da média geral
+        if (Object.keys(averageGroupedData).length > 0) {
+            datasets.push({
+                label: 'Média Geral',
+                data: sortedDays.map(day => averageGroupedData[day] || null),
+                backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                borderColor: '#ec4899',
+                fill: false,
+                spanGaps: true,
+                borderWidth: 4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                borderDash: [5, 5],
+                pointStyle: 'circle',
+                pointBackgroundColor: '#ec4899',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                tension: 0.2
+            });
+        }
+
+        config.data = {
+            labels: sortedDays.map(day => `Dia ${day}`),
+            datasets: datasets
+        };
+
+        // tooltip
+        config.options.plugins.tooltip.callbacks.label = function(context) {
+            let label = context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+            if (context.dataset.label === 'Média Geral') {
+                label = '🎯 ' + label + ' (Média de todas as categorias)';
+            }
+            return label;
+        };
+
+        return config;
+    }
+
+    // Inicializar Gráficos
+    function initCharts() {
+        // Barra
+        if (dataQuartos.length > 0) {
+            const barCtx = document.getElementById('graficoPrecos');
+            if (barCtx) {
+                const barConfig = createBarChartConfig(dataQuartos, 'quartos');
+                currentBarChart = new Chart(barCtx.getContext('2d'), barConfig);
+            }
+        }
+
+        // Linhas
+        if (dataTendenciaQuartos.length > 0) {
+            const lineCtx = document.getElementById('graficoTendencia');
+            if (lineCtx) {
+                const lineConfig = createLineChartConfig(dataTendenciaQuartos, 'quartos');
+                currentLineChart = new Chart(lineCtx.getContext('2d'), lineConfig);
+            }
+        }
+    }
+
+
+    window.toggleBarChart = function(type) {
+        if (currentBarView === type) return;
+
+
+        document.querySelectorAll('#btn-quartos, #btn-camas').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`btn-${type}`).classList.add('active');
+
+        // Destruir e recriar gráficos
+        if (currentBarChart) {
+            currentBarChart.destroy();
+        }
+
+        const ctx = document.getElementById('graficoPrecos');
+        if (ctx) {
+            let config;
+            if (type === 'quartos' && dataQuartos.length > 0) {
+                config = createBarChartConfig(dataQuartos, 'quartos');
+            } else if (type === 'camas' && dataCamas.length > 0) {
+                config = createBarChartConfig(dataCamas, 'camas');
+            }
+
+            if (config) {
+                currentBarChart = new Chart(ctx.getContext('2d'), config);
+                currentBarView = type;
+            }
+        }
+    };
+
+    window.toggleLineChart = function(type) {
+        if (currentLineView === type) return;
+
+
+        document.querySelectorAll('#btn-linha-quartos, #btn-linha-camas').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`btn-linha-${type}`).classList.add('active');
+
+        // Destrui e recriar gráficos
+        if (currentLineChart) {
+            currentLineChart.destroy();
+        }
+
+        const ctx = document.getElementById('graficoTendencia');
+        if (ctx) {
+            let config;
+            if (type === 'quartos' && dataTendenciaQuartos.length > 0) {
+                config = createLineChartConfig(dataTendenciaQuartos, 'quartos');
+            } else if (type === 'camas' && dataTendenciaCamas.length > 0) {
+                config = createLineChartConfig(dataTendenciaCamas, 'camas');
+            }
+
+            if (config) {
+                currentLineChart = new Chart(ctx.getContext('2d'), config);
+                currentLineView = type;
+            }
+        }
+    };
+
+
+    const form = document.getElementById('filter-form');
+    const applyBtn = document.getElementById('apply-filters-btn');
+    const clearBtn = document.getElementById('clear-filters-btn');
+
+
+    if (form && applyBtn) {
+        form.addEventListener('submit', function() {
+            applyBtn.classList.add('loading');
+            applyBtn.disabled = true;
+        });
+    }
+
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            const currentUrl = new URL(window.location.href);
+            const essentialParams = ['cidade', 'bairro', 'data_checkin', 'hospedes', 'quantidade_noites'];
+
+            const newUrl = new URL(currentUrl.origin + currentUrl.pathname);
+
+            essentialParams.forEach(param => {
+                const value = currentUrl.searchParams.get(param);
+                if (value) {
+                    newUrl.searchParams.set(param, value);
+                }
+            });
+
+            window.location.href = newUrl.toString();
+        });
+    }
+
+    const precoInput = document.querySelector('input[name="preco_maximo"]');
+    if (precoInput) {
+        let timeout;
+        precoInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+            }, 2000);
+        });
+    }
+
+    initCharts();
+
+    console.log('🎉 Results page initialized successfully!');
+});
+</script>
+{% endblock %}
